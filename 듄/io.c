@@ -2,7 +2,7 @@
 * raw(?) I/O
 */
 #include "io.h"
-
+#include"common.h"
 void gotoxy(POSITION pos) {
 	COORD coord = { pos.column, pos.row }; // 행, 열 반대로 전달
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);

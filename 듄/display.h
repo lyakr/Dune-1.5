@@ -7,7 +7,6 @@
 
 #ifndef _DISPLAY_H_
 #define _DISPLAY_H_
-
 #include "common.h"
 
 // 표시할 색상 정의. 대충 맞춰 뒀는데, 취향껏 추가하거나 변경하기

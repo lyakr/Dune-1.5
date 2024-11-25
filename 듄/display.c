@@ -12,6 +12,9 @@
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
 
+const POSITION status_window_pos = { 0, MAP_WIDTH + 2 };
+const POSITION command_window_pos = { MAP_HEIGHT / 2 + 1, MAP_WIDTH + 2 };
+const POSITION system_message_pos = { MAP_HEIGHT + 1, 0 };
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
@@ -20,7 +23,10 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
-
+void draw_dividers(void);
+void display_status_window(void);
+void display_command_window(void);
+void display_system_message(void);
 
 void display(
 	RESOURCE resource,
@@ -30,10 +36,13 @@ void display(
 	display_resource(resource);
 	display_map(map);
 	display_cursor(cursor);
-	// display_system_message()
-	// display_object_info()
-	// display_commands()
-	// ...
+	display_resource(resource);
+	display_map(map);
+	display_cursor(cursor);
+	draw_dividers();
+	display_status_window();
+	display_command_window();
+	display_system_message();
 }
 
 void display_resource(RESOURCE resource) {
@@ -82,4 +91,44 @@ void display_cursor(CURSOR cursor) {
 
 	ch = frontbuf[curr.row][curr.column];
 	printc(padd(map_pos, curr), ch, COLOR_CURSOR);
+}
+// 구분선 그리기
+void draw_dividers(void) {
+	set_color(COLOR_DEFAULT);
+
+	// 맵 오른쪽에 수직 구분선
+	for (int i = 0; i <= MAP_HEIGHT; i++) {
+		gotoxy((POSITION) { i, MAP_WIDTH });
+		printf("|");
+	}
+
+	// 명령창 위쪽에 수평 구분선
+	for (int j = 0; j <= MAP_WIDTH + 20; j++) {
+		gotoxy((POSITION) { MAP_HEIGHT / 2, j });
+	}
+
+	// 시스템 메시지 위쪽에 수평 구분선
+	for (int j = 0; j <= MAP_WIDTH + 20; j++) {
+		gotoxy((POSITION) { MAP_HEIGHT, j });
+		printf("-");
+	}
+}
+
+// 상태창 출력
+void display_status_window(void) {
+	set_color(COLOR_DEFAULT);
+	gotoxy(status_window_pos);
+	printf("=== Status Window ===");
+}
+// 명령창 출력
+void display_command_window(void) {
+	set_color(COLOR_DEFAULT);
+	gotoxy(command_window_pos);
+	printf("=== Command Window ===");
+}
+// 시스템 메시지 출력
+void display_system_message(void) {
+	set_color(COLOR_DEFAULT);
+	gotoxy(system_message_pos);
+	printf("=== System Messages ===");
 }
