@@ -43,7 +43,8 @@ int main(void) {
 	init();
 	intro();
 	display(resource, map, cursor);
-
+	init_game_state(&resource, map);
+	display_colored_map(map);
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
