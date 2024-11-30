@@ -129,73 +129,69 @@ void display_system_message(void) {
 	printf("=== System Messages ===");
 }
 
-
-// 오브젝트의 색상을 반환하는 함수
-int get_object_color(char obj) {
-	switch (obj) {
-	case 'B': return 9;   // 본부 (파란색)
-	case 'H': return 14;  // 하베스터 (노란색)
-	case 'W': return 6;   // 샌드웜 (황토색)
-	case 'S': return 12;  // 스파이스 (빨간색)
-	case 'P': return 8;   // 장판 (회색)
-	case 'R': return 7;   // 바위 (밝은 회색)
-	default: return COLOR_DEFAULT; // 기본 색상
+void set_color_by_char(char object) {
+	switch (object) {
+	case 'B': set_color(BLUE); break;   // 본진 (플레이어)
+	case 'W': set_color(YELLOW); break; // 샌드웜
+	case 'H': set_color(RED); break;    // 하코넨 (AI 유닛)
+	case 'S': set_color(ORANGE); break; // 스파이스 매장지
+	case 'P': set_color(BLACK); break;  // 장판
+	case 'R': set_color(GRAY); break;   // 바위
+	case ' ': set_color(GRAY); break;   // 기본 지형
+	default: set_color(WHITE); break;   // 기타
 	}
 }
 
-// 초기 상태를 설정하는 함수
-void init_game_state(RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	// 2. 맵 초기화
-	for (int layer = 0; layer < N_LAYER; layer++) {
-		for (int i = 0; i < MAP_HEIGHT; i++) {
-			for (int j = 0; j < MAP_WIDTH; j++) {
-				map[layer][i][j] = -1; // 빈 칸으로 초기화
-			}
-		}
-	}
-
-	// Layer 0: 지형 및 건물 배치
-	map[0][MAP_HEIGHT - 4][1] = 'B'; map[0][MAP_HEIGHT - 4][2] = 'B'; // 아트레이디스 본부
-	map[0][MAP_HEIGHT - 3][1] = 'B'; map[0][MAP_HEIGHT - 3][2] = 'B';
-	map[0][1][MAP_WIDTH - 3] = 'B'; map[0][1][MAP_WIDTH - 4] = 'B'; // 하코넨 본부
-	map[0][2][MAP_WIDTH - 3] = 'B'; map[0][2][MAP_WIDTH - 4] = 'B';
-
-	map[0][MAP_HEIGHT - 6][1] = 'P'; map[0][MAP_HEIGHT - 6][2] = 'P'; // 아트레이디스 장판
-	map[0][MAP_HEIGHT - 5][1] = 'P'; map[0][MAP_HEIGHT - 5][2] = 'P';
-	map[0][3][MAP_WIDTH - 5] = 'P'; map[0][3][MAP_WIDTH - 6] = 'P'; // 하코넨 장판
-	map[0][4][MAP_WIDTH - 5] = 'P'; map[0][4][MAP_WIDTH - 6] = 'P';
-
-	map[0][5][5] = 'S'; // 스파이스 매장지
-	map[0][6][7] = 'S';
-	map[0][10][10] = 'S';
-
-	map[0][8][20] = 'R'; map[0][9][20] = 'R'; // 바위
-	map[0][8][21] = 'R'; map[0][9][21] = 'R';
-
-	// Layer 1: 유닛 배치
-	map[1][MAP_HEIGHT - 5][3] = 'H'; // 하베스터 (아트레이디스)
-	map[1][3][MAP_WIDTH - 6] = 'H';  // 하베스터 (하코넨)
-
-	map[1][7][7] = 'W';  // 샌드웜
-	map[1][12][15] = 'W';
-}
-
-// 맵의 모든 오브젝트를 색상과 함께 출력하는 함수
-void display_colored_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void initialize_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	// Layer 0 (Terrain Layer)
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
-			char obj = map[0][i][j]; // Layer 0에서 지형 확인
-			if (obj == -1) obj = map[1][i][j]; // Layer 1 확인
-			if (obj >= 0) {
-				set_color(get_object_color(obj));
-				printf("%c", obj);
-			}
-			else {
-				set_color(COLOR_DEFAULT);
-				printf(" ");
-			}
+			map[0][i][j] = ' '; // 기본 지형(빈 공간)
 		}
-		printf("\n");
 	}
-	set_color(COLOR_DEFAULT); // 기본 색상으로 복원
+
+	// 본부 배치
+	map[0][MAP_HEIGHT - 3][1] = 'B'; // 플레이어 본부
+	map[0][MAP_HEIGHT - 3][2] = 'B';
+	map[0][MAP_HEIGHT - 2][1] = 'B';
+	map[0][MAP_HEIGHT - 2][2] = 'B';
+
+	map[0][1][MAP_WIDTH - 3] = 'B'; // 적 본부
+	map[0][1][MAP_WIDTH - 4] = 'B';
+	map[0][2][MAP_WIDTH - 3] = 'B';
+	map[0][2][MAP_WIDTH - 4] = 'B';
+
+	// 장판 배치
+	map[0][MAP_HEIGHT - 4][1] = 'P'; // 플레이어 장판
+	map[0][MAP_HEIGHT - 4][2] = 'P';
+
+	map[0][3][MAP_WIDTH - 3] = 'P'; // 적 장판
+	map[0][3][MAP_WIDTH - 4] = 'P';
+
+	// 스파이스 배치
+	map[0][MAP_HEIGHT / 2][1] = 'S';
+	map[0][MAP_HEIGHT / 2][MAP_WIDTH - 2] = 'S';
+
+	// 바위 배치
+	map[0][MAP_HEIGHT / 3][MAP_WIDTH / 3] = 'R';
+	map[0][2 * MAP_HEIGHT / 3][2 * MAP_WIDTH / 3] = 'R';
+	map[0][MAP_HEIGHT / 2][MAP_WIDTH / 2] = 'R';
+
+	// Layer 1 (Unit Layer)
+	for (int i = 0; i < MAP_HEIGHT; i++) {
+		for (int j = 0; j < MAP_WIDTH; j++) {
+			map[1][i][j] = -1; // 초기화
+		}
+	}
+
+	// 하베스터 배치
+	map[1][MAP_HEIGHT - 3][1] = 'H'; // 플레이어 하베스터
+	map[1][2][MAP_WIDTH - 3] = 'H'; // 적 하베스터
+
+	// 샌드웜 배치
+	map[1][MAP_HEIGHT / 3][MAP_WIDTH / 3] = 'W';
+	map[1][2 * MAP_HEIGHT / 3][2 * MAP_WIDTH / 3] = 'W';
 }
+
+
+

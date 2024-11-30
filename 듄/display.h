@@ -14,8 +14,21 @@
 #define COLOR_CURSOR	112
 #define COLOR_RESOURCE  112
 
+#define BLUE 1
+#define RED 4
+#define YELLOW 6
+#define ORANGE 14 
+#define GRAY 8
+#define BLACK 0
+#define WHITE 7
 // 지금은 자원, 맵, 커서만 표시
 // 앞으로 화면에 표시할 내용들 여기에 추가하기
+
+#define RESOURCE_X_START 0
+#define RESOURCE_X_END 4
+#define RESOURCE_Y_START 0
+#define RESOURCE_Y_END 4
+
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],

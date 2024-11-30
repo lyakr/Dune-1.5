@@ -40,11 +40,13 @@ OBJECT_SAMPLE obj = {
 int main(void) {
 	srand((unsigned int)time(NULL));
 
+	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH];
+	initialize_map(map); // 초기 배치 설정
 	init();
 	intro();
 	display(resource, map, cursor);
-	init_game_state(&resource, map);
-	display_colored_map(map);
+	
+
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
@@ -62,6 +64,8 @@ int main(void) {
 			default: break;
 			}
 		}
+
+
 
 		// 샘플 오브젝트 동작
 		sample_obj_move();
