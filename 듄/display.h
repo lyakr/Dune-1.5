@@ -24,10 +24,6 @@
 // 지금은 자원, 맵, 커서만 표시
 // 앞으로 화면에 표시할 내용들 여기에 추가하기
 
-#define RESOURCE_X_START 0
-#define RESOURCE_X_END 4
-#define RESOURCE_Y_START 0
-#define RESOURCE_Y_END 4
 
 void display(
 	RESOURCE resource,
