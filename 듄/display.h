@@ -23,12 +23,26 @@
 #define WHITE 7
 // 지금은 자원, 맵, 커서만 표시
 // 앞으로 화면에 표시할 내용들 여기에 추가하기
+#ifndef KEY_DEFINITIONS_H
+#define KEY_DEFINITIONS_H
 
+// 키 입력 값 정의
+#define KEY_UP    72   // 화살표 위쪽
+#define KEY_DOWN  80   // 화살표 아래쪽
+#define KEY_LEFT  75   // 화살표 왼쪽
+#define KEY_RIGHT 77   // 화살표 오른쪽
+#define KEY_SPACE 32   // 스페이스바
+#define KEY_ESC   27   // ESC 키
+
+#endif // KEY_DEFINITIONS_H
+
+void deselect_object(void);
 
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	CURSOR cursor
 );
+//
 
 #endif

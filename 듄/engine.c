@@ -36,21 +36,22 @@ OBJECT_SAMPLE obj = {
 	.next_move_time = 300
 };
 
+
 /* ================= main() =================== */
 int main(void) {
 	srand((unsigned int)time(NULL));
 
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH];
-	initialize_map(map); // 초기 배치 설정
+	initialize_map(map); // 초기 맵 설정
 	init();
 	intro();
+
 	display(resource, map, cursor);
 	
 
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
-
 		// 키 입력이 있으면 처리
 		if (is_arrow_key(key)) {
 			cursor_move(ktod(key));
@@ -64,6 +65,27 @@ int main(void) {
 			default: break;
 			}
 		}
+		if (key == -1) continue;
+
+		switch (key){
+		case KEY_SPACE:
+			select_object(cursor, map);
+			break;
+		case KEY_ESC:
+			deselect_object();
+			break;
+		case KEY_UP:
+		case KEY_DOWN:
+		case KEY_LEFT:
+		case KEY_RIGHT:
+			move_cursor_with_double_click(&cursor, key); // 커서 이동
+			break;
+		default:
+			break;
+		}
+
+		display(resource, map, cursor);
+
 
 
 

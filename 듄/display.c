@@ -195,3 +195,90 @@ void initialize_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 
 
+static char selected_object = -1; // 현재 선택된 오브젝트
+void select_object(CURSOR cursor, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	char new_selected_char = map[1][cursor.current.row][cursor.current.column]; // 상위 레이어 확인
+	if (new_selected_char == -1) { // 유닛 없으면 하위 레이어 확인
+		new_selected_char = map[0][cursor.current.row][cursor.current.column];
+	}
+
+	// 선택된 오브젝트가 변경된 경우만 갱신
+	if (selected_object != new_selected_char) {
+		deselect_object(); // 이전 선택 제거
+		selected_object = new_selected_char; // 새로운 선택 업데이트
+
+		// 상태창에 새로운 오브젝트 정보 표시
+		gotoxy(status_window_pos);
+		set_color(COLOR_DEFAULT);
+		if (selected_object == ' ') {
+			printf("=== 사막 지형 ===");
+		}
+		else if (selected_object == 'B') {
+			printf("=== 본진 (Base) ===\n");
+		}
+		else if (selected_object == 'P') {
+			printf("=== 장판 (Plate) ===\n");
+		}
+		else if (selected_object == 'S') {
+			printf("=== 스파이스 (Spice) ===\n");
+		}
+		else if (selected_object == 'R') {
+			printf("=== 바위 (Rock) ===\n");
+		}
+		else if (selected_object == 'H') {
+			printf("=== 하베스터 (Harvester) ===\n");
+		}
+		else if (selected_object == 'W') {
+			printf("=== 샌드웜 (Sandworm) ===\n");
+		}
+		else {
+			printf("=== 알 수 없는 오브젝트 ===\n");
+		}
+	}
+}
+void deselect_object(void) {
+	if (selected_object != -1) {
+		gotoxy(status_window_pos);
+		set_color(COLOR_DEFAULT);
+		printf("                    "); // 상태창 초기화
+		gotoxy(status_window_pos);
+		printf("=== 상태창 비움 ===\n");
+		selected_object = -1; // 선택 해제
+	}
+}
+
+
+void move_cursor_double_click(CURSOR* cursor, char key) {
+	POSITION new_pos = cursor->current;
+
+	switch (key) {
+	case KEY_UP:
+		new_pos.row = (cursor->current.row - 4 >= 0) ? cursor->current.row - 4 : 0;
+		break;
+	case KEY_DOWN:
+		new_pos.row = (cursor->current.row + 4 < MAP_HEIGHT) ? cursor->current.row + 4 : MAP_HEIGHT - 1;
+		break;
+	case KEY_LEFT:
+		new_pos.column = (cursor->current.column - 4 >= 0) ? cursor->current.column - 4 : 0;
+		break;
+	case KEY_RIGHT:
+		new_pos.column = (cursor->current.column + 4 < MAP_WIDTH) ? cursor->current.column + 4 : MAP_WIDTH - 1;
+		break;
+	default:
+		return; // 다른 키는 무시
+	}
+
+	cursor->previous = cursor->current;
+	cursor->current = new_pos;
+	display_cursor(*cursor);
+}
+
+void handle_space_key(CURSOR* cursor, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	select_object(*cursor, map); // 현재 커서 위치의 오브젝트 선택
+}
+
+void handle_esc_key(void) {
+	deselect_object(); // 선택된 오브젝트 해제 및 상태창 비우기
+}
+
+
