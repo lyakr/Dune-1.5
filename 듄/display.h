@@ -38,11 +38,15 @@
 
 void deselect_object(void);
 
+#define TICK 10
+#define DOUBLE_CLICK_THRESHOLD 300 // ms
+#define SINGLE_CLICK_MOVE_DISTANCE 1
+#define DOUBLE_CLICK_MOVE_DISTANCE 4
+
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	CURSOR cursor
 );
-//
 
 #endif

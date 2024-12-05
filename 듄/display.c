@@ -193,92 +193,115 @@ void initialize_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	map[1][2 * MAP_HEIGHT / 3][2 * MAP_WIDTH / 3] = 'W';
 }
 
+KEY last_key = k_none;      // 마지막으로 입력된 키
+DWORD last_key_time = 0;    // 마지막 입력 시간
 
+int is_double_click(KEY key) {
+	DWORD current_time = GetTickCount();
 
-static char selected_object = -1; // 현재 선택된 오브젝트
-void select_object(CURSOR cursor, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	char new_selected_char = map[1][cursor.current.row][cursor.current.column]; // 상위 레이어 확인
-	if (new_selected_char == -1) { // 유닛 없으면 하위 레이어 확인
-		new_selected_char = map[0][cursor.current.row][cursor.current.column];
+	// 동일 키이고, 시간 차이가 임계값 이내라면 더블클릭으로 간주
+	if (key == last_key && (current_time - last_key_time) <= DOUBLE_CLICK_THRESHOLD) {
+		return 1; // 더블클릭 감지
 	}
 
-	// 선택된 오브젝트가 변경된 경우만 갱신
-	if (selected_object != new_selected_char) {
-		deselect_object(); // 이전 선택 제거
-		selected_object = new_selected_char; // 새로운 선택 업데이트
+	// 상태 업데이트
+	last_key = key;
+	last_key_time = current_time;
 
-		// 상태창에 새로운 오브젝트 정보 표시
-		gotoxy(status_window_pos);
-		set_color(COLOR_DEFAULT);
-		if (selected_object == ' ') {
-			printf("=== 사막 지형 ===");
-		}
-		else if (selected_object == 'B') {
-			printf("=== 본진 (Base) ===\n");
-		}
-		else if (selected_object == 'P') {
-			printf("=== 장판 (Plate) ===\n");
-		}
-		else if (selected_object == 'S') {
-			printf("=== 스파이스 (Spice) ===\n");
-		}
-		else if (selected_object == 'R') {
-			printf("=== 바위 (Rock) ===\n");
-		}
-		else if (selected_object == 'H') {
-			printf("=== 하베스터 (Harvester) ===\n");
-		}
-		else if (selected_object == 'W') {
-			printf("=== 샌드웜 (Sandworm) ===\n");
-		}
-		else {
-			printf("=== 알 수 없는 오브젝트 ===\n");
-		}
-	}
-}
-void deselect_object(void) {
-	if (selected_object != -1) {
-		gotoxy(status_window_pos);
-		set_color(COLOR_DEFAULT);
-		printf("                    "); // 상태창 초기화
-		gotoxy(status_window_pos);
-		printf("=== 상태창 비움 ===\n");
-		selected_object = -1; // 선택 해제
-	}
+	return 0; // 단일 클릭
 }
 
+void cursor_move_with_key(KEY key) {
+	int distance = is_double_click(key) ? DOUBLE_CLICK_MOVE_DISTANCE : SINGLE_CLICK_MOVE_DISTANCE;
+	cursor_move(ktod(key), distance);
+}
 
-void move_cursor_double_click(CURSOR* cursor, char key) {
-	POSITION new_pos = cursor->current;
+#define SPICE_GENERATION_CHANCE 10  // 10% 확률
+#define SPICE_MAX 9                // 최대 매장량
+#define MOVE_PERIOD 2500           // 샌드웜 이동 주기 (ms)
 
-	switch (key) {
-	case KEY_UP:
-		new_pos.row = (cursor->current.row - 4 >= 0) ? cursor->current.row - 4 : 0;
-		break;
-	case KEY_DOWN:
-		new_pos.row = (cursor->current.row + 4 < MAP_HEIGHT) ? cursor->current.row + 4 : MAP_HEIGHT - 1;
-		break;
-	case KEY_LEFT:
-		new_pos.column = (cursor->current.column - 4 >= 0) ? cursor->current.column - 4 : 0;
-		break;
-	case KEY_RIGHT:
-		new_pos.column = (cursor->current.column + 4 < MAP_WIDTH) ? cursor->current.column + 4 : MAP_WIDTH - 1;
-		break;
-	default:
-		return; // 다른 키는 무시
+typedef struct {
+	POSITION pos;
+	int next_move_time;
+} SANDWORM;
+
+void move_sandworm(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int sys_clock);
+void eat_unit(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+void generate_spice(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+POSITION find_closest_unit(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+
+void move_sandworm(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int sys_clock) {
+	if (sys_clock < worm->next_move_time) return; // 이동 시간이 아니라면 반환
+
+	worm->next_move_time = sys_clock + MOVE_PERIOD; // 다음 이동 시간 갱신
+
+	POSITION target = find_closest_unit(worm, map);
+	if (target.row == -1 && target.column == -1) return; // 이동할 대상 없음
+
+	// 방향 계산
+	int dr = target.row - worm->pos.row;
+	int dc = target.column - worm->pos.column;
+	POSITION next = worm->pos;
+
+	if (abs(dr) > abs(dc)) {
+		next.row += (dr > 0) ? 1 : -1;
+	}
+	else {
+		next.column += (dc > 0) ? 1 : -1;
 	}
 
-	cursor->previous = cursor->current;
-	cursor->current = new_pos;
-	display_cursor(*cursor);
+	// 맵에서 이전 위치 제거
+	map[1][worm->pos.row][worm->pos.column] = -1;
+
+	// 새 위치로 이동
+	worm->pos = next;
+	map[1][next.row][next.column] = 'W';
+
+	// 유닛 잡아먹기
+	eat_unit(worm, map);
+
+	// 확률적으로 스파이스 생성
+	generate_spice(worm, map);
 }
 
-void handle_space_key(CURSOR* cursor, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	select_object(*cursor, map); // 현재 커서 위치의 오브젝트 선택
+void eat_unit(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	char target = map[1][worm->pos.row][worm->pos.column];
+	if (target != -1 && target != 'W') { // 유닛 존재 && 샌드웜이 아님
+		map[1][worm->pos.row][worm->pos.column] = -1; // 유닛 제거
+		// 시스템 메시지 출력
+		set_color(COLOR_SYSTEM_MESSAGE);
+		printf("A unit was devoured by the sandworm at (%d, %d)!\n",
+			worm->pos.row, worm->pos.column);
+	}
 }
 
-void handle_esc_key(void) {
-	deselect_object(); // 선택된 오브젝트 해제 및 상태창 비우기
+void generate_spice(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	if (rand() % 100 < SPICE_GENERATION_CHANCE) { // 일정 확률로 생성
+		int spice_amount = 1 + rand() % SPICE_MAX; // 1~SPICE_MAX 사이 값
+		map[0][worm->pos.row][worm->pos.column] = 'S';
+		// 스파이스 매장량을 표현 (1~9)
+		printf("A new spice field (%d) appeared at (%d, %d)!\n",
+			spice_amount, worm->pos.row, worm->pos.column);
+	}
 }
 
+POSITION find_closest_unit(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	POSITION closest = { -1, -1 };
+	int min_distance = MAP_HEIGHT * MAP_WIDTH;
 
+	for (int i = 0; i < MAP_HEIGHT; i++) {
+		for (int j = 0; j < MAP_WIDTH; j++) {
+			char target = map[1][i][j];
+			if (target != -1 && target != 'W') { // 유닛 존재 && 샌드웜 제외
+				int distance = abs(worm->pos.row - i) + abs(worm->pos.column - j);
+				if (distance < min_distance) {
+					min_distance = distance;
+					closest.row = i;
+					closest.column = j;
+				}
+			}
+		}
+	}
+
+	return closest;
+}

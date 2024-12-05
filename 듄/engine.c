@@ -48,46 +48,23 @@ int main(void) {
 
 	display(resource, map, cursor);
 	
-
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
+
 		// 키 입력이 있으면 처리
 		if (is_arrow_key(key)) {
-			cursor_move(ktod(key));
+			cursor_move_with_key(key);
 		}
 		else {
-			// 방향키 외의 입력
+			// 방향키 외의 입력 처리
 			switch (key) {
-			case k_quit: outro();
+			case k_quit: outro(); return; // 프로그램 종료
 			case k_none:
 			case k_undef:
 			default: break;
 			}
 		}
-		if (key == -1) continue;
-
-		switch (key){
-		case KEY_SPACE:
-			select_object(cursor, map);
-			break;
-		case KEY_ESC:
-			deselect_object();
-			break;
-		case KEY_UP:
-		case KEY_DOWN:
-		case KEY_LEFT:
-		case KEY_RIGHT:
-			move_cursor_with_double_click(&cursor, key); // 커서 이동
-			break;
-		default:
-			break;
-		}
-
-		display(resource, map, cursor);
-
-
-
 
 		// 샘플 오브젝트 동작
 		sample_obj_move();
