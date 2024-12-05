@@ -305,3 +305,4 @@ POSITION find_closest_unit(SANDWORM* worm, char map[N_LAYER][MAP_HEIGHT][MAP_WID
 
 	return closest;
 }
+//
