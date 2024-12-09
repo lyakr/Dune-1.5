@@ -36,30 +36,47 @@ OBJECT_SAMPLE obj = {
 	.next_move_time = 300
 };
 
-
 /* ================= main() =================== */
 int main(void) {
 	srand((unsigned int)time(NULL));
-
+	
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH];
 	initialize_map(map); // 초기 맵 설정
 	init();
 	intro();
 
 	display(resource, map, cursor);
+	OBJECT_SAMPLE objects[MAX_OBJECTS];  // 오브젝트 배열
+	int num_objects = 0;  // 현재 오브젝트 수
+	INPUT_STATE input_state = { k_none, 0 };
 	
+
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
-
+		int current_time = sys_clock;
 		// 키 입력이 있으면 처리
+
 		if (is_arrow_key(key)) {
-			cursor_move_with_key(key);
+			DIRECTION dir = key_to_direction(key);
+
+			if (dir == input_state.last_key &&
+				(current_time - input_state.last_key_time) <= DOUBLE_CLICK_THRESHOLD) {
+				// 더블클릭: 4칸 이동
+				cursor_double_move(dir, &cursor);
+			}
+			else {
+				// 일반 이동: 기존 cursor_move 호출
+				cursor_move(dir, &cursor);
+			}
+
+			input_state.last_key = dir;
+			input_state.last_key_time = current_time;
 		}
 		else {
-			// 방향키 외의 입력 처리
+			// 방향키 외의 입력
 			switch (key) {
-			case k_quit: outro(); return; // 프로그램 종료
+			case k_quit: outro();
 			case k_none:
 			case k_undef:
 			default: break;
@@ -73,6 +90,10 @@ int main(void) {
 		display(resource, map, cursor);
 		Sleep(TICK);
 		sys_clock += 10;
+		// 시스템 클락이 지나치게 커지지 않도록 관리
+		if (sys_clock >= 100000) {
+			sys_clock = 0;  // 클락 리셋 (예: 100초마다 리셋)
+		}
 	}
 }
 
@@ -185,3 +206,7 @@ void sample_obj_move(void) {
 
 	obj.next_move_time = sys_clock + obj.speed;
 }
+
+
+
+

@@ -193,28 +193,49 @@ void initialize_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	map[1][2 * MAP_HEIGHT / 3][2 * MAP_WIDTH / 3] = 'W';
 }
 
-KEY last_key = k_none;      // 마지막으로 입력된 키
-DWORD last_key_time = 0;    // 마지막 입력 시간
 
-int is_double_click(KEY key) {
-	DWORD current_time = GetTickCount();
 
-	// 동일 키이고, 시간 차이가 임계값 이내라면 더블클릭으로 간주
-	if (key == last_key && (current_time - last_key_time) <= DOUBLE_CLICK_THRESHOLD) {
-		return 1; // 더블클릭 감지
+
+typedef enum {
+	DIRECTION_NONE = 0,   // 이동 없음
+	DIRECTION_UP,         // 위로 이동
+	DIRECTION_DOWN,       // 아래로 이동
+	DIRECTION_LEFT,       // 왼쪽으로 이동
+	DIRECTION_RIGHT       // 오른쪽으로 이동
+} DIRECTION;
+
+DIRECTION key_to_direction(KEY key) {
+	switch (key) {
+	case k_up:    return DIRECTION_UP;
+	case k_down:  return DIRECTION_DOWN;
+	case k_left:  return DIRECTION_LEFT;
+	case k_right: return DIRECTION_RIGHT;
+	default:      return DIRECTION_NONE;
+	}
+}
+void cursor_double_move(DIRECTION dir, CURSOR* cursor) {
+	POSITION move = { 0, 0 };
+
+	// 방향에 따라 4칸 이동
+	switch (dir) {
+	case DIRECTION_UP:    move.row = -4; break;
+	case DIRECTION_DOWN:  move.row = 4; break;
+	case DIRECTION_LEFT:  move.column = -4; break;
+	case DIRECTION_RIGHT: move.column = 4; break;
+	default:              return; // 방향 없음
 	}
 
-	// 상태 업데이트
-	last_key = key;
-	last_key_time = current_time;
-
-	return 0; // 단일 클릭
+	// 현재 위치 갱신
+	cursor->previous = cursor->current;
+	cursor->current.row = clamp(cursor->current.row + move.row, 0, MAP_HEIGHT - 1);
+	cursor->current.column = clamp(cursor->current.column + move.column, 0, MAP_WIDTH - 1);
+}
+int clamp(int value, int min, int max) {
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
 }
 
-void cursor_move_with_key(KEY key) {
-	int distance = is_double_click(key) ? DOUBLE_CLICK_MOVE_DISTANCE : SINGLE_CLICK_MOVE_DISTANCE;
-	cursor_move(ktod(key), distance);
-}
 
 #define SPICE_GENERATION_CHANCE 10  // 10% 확률
 #define SPICE_MAX 9                // 최대 매장량
